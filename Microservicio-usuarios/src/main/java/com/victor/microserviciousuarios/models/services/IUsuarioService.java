@@ -10,6 +10,6 @@ public interface IUsuarioService {
     public Usuario obtenerUsuario(Integer id) throws Exception;
     public Usuario guardar(Usuario usuario) throws Exception;
     public void eliminar(Integer id) throws Exception;
-    List<Usuario> listarPorIds(Iterable<Integer> ids);
+    List<Usuario> listarPorIds(Iterable<Integer> ids) throws Exception;
 
 }

@@ -1,5 +1,6 @@
 package com.victor.microserviciousuarios.models.services.Impl;
 
+import com.victor.microserviciousuarios.clientes.ICursoClienteRest;
 import com.victor.microserviciousuarios.models.entities.Usuario;
 import com.victor.microserviciousuarios.models.repository.IUsuarioRepository;
 import com.victor.microserviciousuarios.models.services.IUsuarioService;
@@ -14,6 +15,9 @@ public class UsuarioServiceImpl implements IUsuarioService {
 
     @Autowired
     private IUsuarioRepository usuarioRepository;
+
+    @Autowired
+    private ICursoClienteRest cursoClienteRest;
 
 
     @Override
@@ -49,6 +53,7 @@ public class UsuarioServiceImpl implements IUsuarioService {
         Usuario usuario = obtenerUsuario(id);
         if(usuario != null) {
             usuarioRepository.deleteById(id);
+            cursoClienteRest.eliminarUsuarioPorId(id);
         }
         else {
             throw new Exception("USUARIO NO ENCONTRADO");
@@ -57,7 +62,8 @@ public class UsuarioServiceImpl implements IUsuarioService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Usuario> listarPorIds(Iterable<Integer> ids) {
+    public List<Usuario> listarPorIds(Iterable<Integer> ids) throws Exception {
         return (List<Usuario>)usuarioRepository.findAllById(ids);
     }
+
 }

@@ -16,5 +16,6 @@ public interface ICursoService {
     Usuario crearUsuario(Usuario usuario, Integer cursoId) throws Exception;
     Usuario eliminarUsuarioDelCurso(Usuario usuario, Integer cursoId) throws Exception;
     Curso porIdConUsuarios(Integer id) throws Exception;
+    void eliminarCursoUsuarioPorId(Integer usuarioId) throws Exception;
 
 }

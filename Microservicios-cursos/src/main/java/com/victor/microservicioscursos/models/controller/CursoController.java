@@ -127,4 +127,10 @@ public class CursoController {
         }
     }
 
+    @DeleteMapping("/eliminar-curso-usuario/{usuarioId}")
+    public ResponseEntity<?> eliminarUsuarioPorId(@PathVariable Integer usuarioId) throws Exception {
+        cursoService.eliminarCursoUsuarioPorId(usuarioId);
+        return ResponseEntity.noContent().build();
+    }
+
 }

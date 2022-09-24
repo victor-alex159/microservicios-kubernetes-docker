@@ -62,7 +62,7 @@ public class UsuarioController {
         }
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/eliminar/{id}")
     public ResponseEntity<?> eliminarUsuario(@PathVariable Integer id) throws Exception {
         Usuario usuarioEncontrado = usuarioService.obtenerUsuario(id);
         if(usuarioEncontrado != null) {

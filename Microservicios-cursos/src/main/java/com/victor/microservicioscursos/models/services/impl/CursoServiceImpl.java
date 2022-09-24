@@ -116,5 +116,11 @@ public class CursoServiceImpl implements ICursoService {
         return null;
     }
 
+    @Override
+    @Transactional
+    public void eliminarCursoUsuarioPorId(Integer usuarioId) throws Exception {
+        cursoRepository.eliminarCursoUsuarioPorId(usuarioId);
+    }
+
 
 }
