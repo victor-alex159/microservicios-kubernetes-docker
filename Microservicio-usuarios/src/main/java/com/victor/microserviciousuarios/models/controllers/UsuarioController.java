@@ -77,7 +77,7 @@ public class UsuarioController {
     private static ResponseEntity<Map<String, String>> validarError(BindingResult result) {
         Map<String, String> errores = new HashMap<>();
         result.getFieldErrors().forEach(err -> {
-            errores.put(err.getField(), "El campo " + err.getField() + " " + err.getDefaultMessage());
+            errores.put(err.getField(), "El campo " + err.getField() + " " + err.getDefaultMessage() + ".");
         });
         return ResponseEntity.badRequest().body(errores);
     }
