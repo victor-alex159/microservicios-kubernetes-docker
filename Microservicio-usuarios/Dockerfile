@@ -1,4 +1,4 @@
-FROM openjdk:11 as builder
+FROM openjdk:11-jdk-slim-buster as builder
 WORKDIR /app/Microservicio-usuarios
 
 COPY ./pom.xml /app

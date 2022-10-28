@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(name = "microservicio-usuario", url = "localhost:8001")
+@FeignClient(name = "microservicio-usuarios", url = "microservicio-usuarios:8001")
 public interface IUsuarioClientRest {
 
     @GetMapping("/usuario/{id}")
