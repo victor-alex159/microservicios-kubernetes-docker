@@ -108,6 +108,7 @@ public class CursoController {
     @PostMapping("/crear-usuario/{cursoId}")
     public ResponseEntity<?> crearUsuario(@RequestBody Usuario usuario, @PathVariable Integer cursoId) throws Exception {
         Usuario usuarioNuevo = cursoService.crearUsuario(usuario, cursoId);
+        int[] x = {1, 2,3 };
         if(usuarioNuevo != null) {
             return ResponseEntity.status(HttpStatus.CREATED).body(usuarioNuevo);
         }
@@ -132,5 +133,8 @@ public class CursoController {
         cursoService.eliminarCursoUsuarioPorId(usuarioId);
         return ResponseEntity.noContent().build();
     }
+
+
+
 
 }

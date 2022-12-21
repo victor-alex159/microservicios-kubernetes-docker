@@ -2,23 +2,39 @@ package com.victor.microserviciousuarios.models.controllers;
 
 import com.victor.microserviciousuarios.models.entities.Usuario;
 import com.victor.microserviciousuarios.models.services.IUsuarioService;
+import com.victor.microserviciousuarios.models.util.Constants;
+import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.util.JRLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import javax.validation.Valid;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.sql.Connection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping(value = "/usuario")
+@CrossOrigin(origins = "http://localhost:4200")
 public class UsuarioController {
 
     @Autowired
     private IUsuarioService usuarioService;
+
+    @Autowired
+    private DataSource datasource;
 
     @GetMapping("/listar")
     public ResponseEntity<List<Usuario>> listarUsuarios() throws Exception {
@@ -91,6 +107,36 @@ public class UsuarioController {
         else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @RequestMapping(value = "/descarga/reporte-usuario", produces = "application/x-pdf" ,method = RequestMethod.POST)
+    @ResponseBody
+    public void descargarReporteUsuarios(@RequestBody Usuario usuario, HttpServletResponse response) {
+        Connection connection = null;
+        try {
+            connection = datasource.getConnection();
+            Map<String, Object> parametros = new HashMap<String, Object>();
+            parametros.put("usuarioId", usuario.getId());
+            InputStream jasperInputStream = this.getClass().getClassLoader().getResourceAsStream(Constants.REPORTS_PATH + "Reporte-usuarios.jasper");
+            JasperReport jasperReport = (JasperReport) JRLoader.loadObject(jasperInputStream);
+            JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parametros, connection);
+            response.setContentType("application/x-pdf");
+            final OutputStream outputStream = response.getOutputStream();
+            JasperExportManager.exportReportToPdfStream(jasperPrint, outputStream);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if(connection != null) {
+                try {
+                    connection.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+
     }
 
 }
