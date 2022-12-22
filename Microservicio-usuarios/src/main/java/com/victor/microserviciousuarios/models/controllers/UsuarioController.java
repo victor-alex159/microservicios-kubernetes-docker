@@ -3,6 +3,8 @@ package com.victor.microserviciousuarios.models.controllers;
 import com.victor.microserviciousuarios.models.entities.Usuario;
 import com.victor.microserviciousuarios.models.services.IUsuarioService;
 import com.victor.microserviciousuarios.models.util.Constants;
+import com.victor.microserviciousuarios.models.util.MailService;
+import com.victor.microserviciousuarios.models.util.MailServiceImpl;
 import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
@@ -17,13 +19,9 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import javax.validation.Valid;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.sql.Connection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @RestController
 @RequestMapping(value = "/usuario")
@@ -35,6 +33,9 @@ public class UsuarioController {
 
     @Autowired
     private DataSource datasource;
+
+    @Autowired
+    private MailService mailService;
 
     @GetMapping("/listar")
     public ResponseEntity<List<Usuario>> listarUsuarios() throws Exception {
@@ -111,7 +112,29 @@ public class UsuarioController {
 
     @RequestMapping(value = "/descarga/reporte-usuario", produces = "application/x-pdf" ,method = RequestMethod.POST)
     @ResponseBody
-    public void descargarReporteUsuarios(@RequestBody Usuario usuario, HttpServletResponse response) {
+    public void descargarReporteUsuarios(@RequestBody Usuario usuario, HttpServletResponse response) throws Exception {
+        JasperPrint jasperPrint = obtenerReporteUsuario(usuario);
+        response.setContentType("application/x-pdf");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        JasperExportManager.exportReportToPdfStream(jasperPrint, baos);
+
+        OutputStream outputStream = response.getOutputStream();
+        JasperExportManager.exportReportToPdfStream(jasperPrint, outputStream);
+
+        List<File> listFiles = new ArrayList<>();
+        List<String> fileNames = new ArrayList<>();
+        fileNames.add("Reporte-usuario-1.pdf");
+        fileNames.add("Reporte-usuario-2.pdf");
+        File file = File.createTempFile(fileNames.get(0), null);
+        FileOutputStream fos = new FileOutputStream(file);
+        fos.write(baos.toByteArray());
+        fos.close();
+        listFiles.add(file);
+        listFiles.add(file);
+        mailService.enviarEmail2("alexbenavente322@gmail.com", "TEST3", "CORREO DE PRUEBA", null, fileNames, listFiles);
+    }
+
+    public JasperPrint obtenerReporteUsuario(Usuario usuario) throws Exception {
         Connection connection = null;
         try {
             connection = datasource.getConnection();
@@ -120,10 +143,8 @@ public class UsuarioController {
             InputStream jasperInputStream = this.getClass().getClassLoader().getResourceAsStream(Constants.REPORTS_PATH + "Reporte-usuarios.jasper");
             JasperReport jasperReport = (JasperReport) JRLoader.loadObject(jasperInputStream);
             JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parametros, connection);
-            response.setContentType("application/x-pdf");
-            final OutputStream outputStream = response.getOutputStream();
-            JasperExportManager.exportReportToPdfStream(jasperPrint, outputStream);
-            
+            return jasperPrint;
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -135,8 +156,8 @@ public class UsuarioController {
                 }
             }
         }
-
-
+        return null;
     }
+
 
 }
