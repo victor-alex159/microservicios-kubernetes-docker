@@ -1,6 +1,7 @@
 package com.victor.microserviciousuarios.models.controllers;
 
 import com.victor.microserviciousuarios.models.entities.Usuario;
+import com.victor.microserviciousuarios.models.response.GenericResponse;
 import com.victor.microserviciousuarios.models.services.IUsuarioService;
 import com.victor.microserviciousuarios.models.util.Constants;
 import com.victor.microserviciousuarios.models.util.MailService;
@@ -11,6 +12,9 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.util.JRLoader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.InputStreamSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -20,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import javax.validation.Valid;
 import java.io.*;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.util.*;
 
@@ -110,11 +115,22 @@ public class UsuarioController {
         }
     }
 
+    @RequestMapping(value = "/mostrar/reporte-usuario", produces = "application/x-pdf" ,method = RequestMethod.POST)
+    @ResponseBody
+    public void mostrarReporteUsuario(@RequestBody Usuario usuario, HttpServletResponse response) throws Exception {
+        JasperPrint jasperPrint = obtenerReporteUsuario(usuario);
+        response.setContentType("application/x-pdf");
+
+        OutputStream outputStream = response.getOutputStream();
+        JasperExportManager.exportReportToPdfStream(jasperPrint, outputStream);
+    }
+
     @RequestMapping(value = "/descarga/reporte-usuario", produces = "application/x-pdf" ,method = RequestMethod.POST)
     @ResponseBody
     public void descargarReporteUsuarios(@RequestBody Usuario usuario, HttpServletResponse response) throws Exception {
         JasperPrint jasperPrint = obtenerReporteUsuario(usuario);
         response.setContentType("application/x-pdf");
+        response.addHeader("Content-Disposition", "attachment; filename="+"Reporte-usuario.pdf");
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         JasperExportManager.exportReportToPdfStream(jasperPrint, baos);
 
@@ -157,6 +173,46 @@ public class UsuarioController {
             }
         }
         return null;
+    }
+
+    @PostMapping(value = "/enviar-correo/{idUsuario}")
+    public GenericResponse<Object> enviarCorreoPorUsuario(@PathVariable("idUsuario") Integer idUsuario) throws Exception {
+        ByteArrayOutputStream baos = null;
+        FileOutputStream fos = null;
+        try {
+            String asunto = "Mensaje de Prueba Email";
+            Usuario usuario = usuarioService.obtenerUsuario(idUsuario);
+            if(usuario != null) {
+                JasperPrint jasperPrint = obtenerReporteUsuario(usuario);
+                String nombreArchivo = "Reporte de " + usuario.getNombre()  + ".pdf";
+                baos = new ByteArrayOutputStream();
+                JasperExportManager.exportReportToPdfStream(jasperPrint, baos);
+                List<ByteArrayResource> listFiles = new ArrayList<>();
+                List<String> fileNames = new ArrayList<>();
+                fileNames.add(nombreArchivo);
+                ByteArrayResource bar = new ByteArrayResource(baos.toByteArray());
+                listFiles.add(bar);
+                GenericResponse<Object> respEnvioEmail = mailService.enviarEmail3("alexbenavente322@gmail.com", asunto, "CORREO DE PRUEBA", null, fileNames, listFiles);
+                if(respEnvioEmail.isSuccess()) {
+                    return new GenericResponse<>(true, "Email enviado!");
+                }
+                return respEnvioEmail;
+            }
+            else {
+                return new GenericResponse<>(false, "Error al enviar el correo. El usuario no existe.");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new GenericResponse<Object>(false, "Error al enviar el correo.");
+        } finally {
+            if(baos != null && fos != null) {
+                baos.close();
+                fos.close();
+            }
+        }
+
+
     }
 
 

@@ -1,11 +1,14 @@
 package com.victor.microserviciousuarios.models.util;
 
+import com.victor.microserviciousuarios.models.response.GenericResponse;
 import org.apache.logging.log4j.Logger;
 
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.InputStreamSource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -74,6 +77,7 @@ public class MailServiceImpl implements MailService {
 
     }
 
+    @Override
     public void enviarEmail(String emailTo, String subject, String text, String bodyHtml, List<String> fileNames,
                                         List<File> listFiles) throws Exception {
         logger.info("*****Enviando email*****");
@@ -129,6 +133,7 @@ public class MailServiceImpl implements MailService {
 
     }
 
+    @Override
     public void enviarEmail2(String emailTo, String subject, String text, String bodyHtml, List<String> fileNames,
                              List<File> listFiles) throws Exception {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
@@ -157,6 +162,40 @@ public class MailServiceImpl implements MailService {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+
+    }
+
+    @Override
+    public GenericResponse<Object> enviarEmail3(String emailTo, String subject, String text, String bodyHtml, List<String> fileNames,
+                                        List<ByteArrayResource> listFiles) throws Exception {
+        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+        MimeMessageHelper mimeMessageHelper;
+        try {
+            logger.info("*****Enviando email*****");
+            mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
+            mimeMessageHelper.setFrom(fromEmail);
+            mimeMessageHelper.setTo(emailTo);
+            mimeMessageHelper.setSubject(subject);
+            if(bodyHtml != null) {
+                mimeMessageHelper.setText(bodyHtml, "text/html; charset=utf-8");
+            } else {
+                mimeMessageHelper.setText(text);
+            }
+            if(listFiles != null && listFiles.size() > 0) {
+                int index = 0;
+                for(ByteArrayResource file : listFiles) {
+                    mimeMessageHelper.addAttachment(fileNames.get(index), file);
+                    index = index + 1;
+                }
+            }
+            javaMailSender.send(mimeMessage);
+            logger.info("*****Email enviado*****");
+            return new GenericResponse<>(true, "Email enviado");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new GenericResponse<>(false, "Error en el proceso de envio de email.");
         }
 
     }
