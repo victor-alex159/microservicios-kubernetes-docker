@@ -212,8 +212,9 @@ public class MailServiceImpl implements MailService {
 
     public ByteArrayOutputStream setearPasswordArchivo(ByteArrayResource fileBar) throws Exception {
         ByteArrayOutputStream os = null;
+        PDDocument pdd = null;
         try {
-            PDDocument pdd = PDDocument.load(fileBar.getByteArray());
+            pdd = PDDocument.load(fileBar.getByteArray());
             AccessPermission ap = new AccessPermission();
 
             // step 3. Creating instance of
@@ -235,7 +236,9 @@ public class MailServiceImpl implements MailService {
             e.printStackTrace();
             return null;
         } finally {
-
+            if(pdd != null) {
+                pdd.close();
+            }
         }
     }
 
