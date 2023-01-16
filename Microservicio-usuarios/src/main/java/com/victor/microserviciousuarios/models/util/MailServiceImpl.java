@@ -1,9 +1,15 @@
 package com.victor.microserviciousuarios.models.util;
 
+
+
 import com.victor.microserviciousuarios.models.response.GenericResponse;
 import org.apache.logging.log4j.Logger;
 
 import org.apache.logging.log4j.LogManager;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
+import org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy;
+import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -13,7 +19,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Properties;
 import javax.activation.DataHandler;
@@ -24,6 +31,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+import javax.mail.util.ByteArrayDataSource;
 
 @Service
 public class MailServiceImpl implements MailService {
@@ -185,7 +193,9 @@ public class MailServiceImpl implements MailService {
             if(listFiles != null && listFiles.size() > 0) {
                 int index = 0;
                 for(ByteArrayResource file : listFiles) {
-                    mimeMessageHelper.addAttachment(fileNames.get(index), file);
+                    ByteArrayOutputStream baos = setearPasswordArchivo(file);
+                    DataSource source = new ByteArrayDataSource(baos.toByteArray(),"application/octet-stream");
+                    mimeMessageHelper.addAttachment(fileNames.get(index), source);
                     index = index + 1;
                 }
             }
@@ -199,5 +209,35 @@ public class MailServiceImpl implements MailService {
         }
 
     }
+
+    public ByteArrayOutputStream setearPasswordArchivo(ByteArrayResource fileBar) throws Exception {
+        ByteArrayOutputStream os = null;
+        try {
+            PDDocument pdd = PDDocument.load(fileBar.getByteArray());
+            AccessPermission ap = new AccessPermission();
+
+            // step 3. Creating instance of
+            // StandardProtectionPolicy
+            StandardProtectionPolicy stpp  = new StandardProtectionPolicy("123456", "123456", ap);
+
+            // step 4. Setting the length of Encryption key
+            stpp.setEncryptionKeyLength(128);
+
+            // step 5. Setting the permission
+            stpp.setPermissions(ap);
+
+            // step 6. Protecting the PDF file
+            pdd.protect(stpp);
+            os = new ByteArrayOutputStream();
+            pdd.save(os);
+            return os;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+
+        }
+    }
+
 
 }

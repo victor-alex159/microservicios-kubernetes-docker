@@ -12,6 +12,7 @@ import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.util.JRLoader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.InputStreamSource;
@@ -41,6 +42,9 @@ public class UsuarioController {
 
     @Autowired
     private MailService mailService;
+
+    @Value("${ms-usuario.ruta-guardado}")
+    private String rutaArchivoUsuario;
 
     @GetMapping("/listar")
     public ResponseEntity<List<Usuario>> listarUsuarios() throws Exception {
@@ -184,19 +188,29 @@ public class UsuarioController {
             Usuario usuario = usuarioService.obtenerUsuario(idUsuario);
             if(usuario != null) {
                 JasperPrint jasperPrint = obtenerReporteUsuario(usuario);
-                String nombreArchivo = "Reporte de " + usuario.getNombre()  + ".pdf";
+                String nombreArchivo = "Reporte de " + usuario.getNombre() + ".pdf";
                 baos = new ByteArrayOutputStream();
-                JasperExportManager.exportReportToPdfStream(jasperPrint, baos);
-                List<ByteArrayResource> listFiles = new ArrayList<>();
-                List<String> fileNames = new ArrayList<>();
-                fileNames.add(nombreArchivo);
-                ByteArrayResource bar = new ByteArrayResource(baos.toByteArray());
-                listFiles.add(bar);
-                GenericResponse<Object> respEnvioEmail = mailService.enviarEmail3("alexbenavente322@gmail.com", asunto, "CORREO DE PRUEBA", null, fileNames, listFiles);
-                if(respEnvioEmail.isSuccess()) {
-                    return new GenericResponse<>(true, "Email enviado!");
+                //JasperExportManager.exportReportToPdfStream(jasperPrint, baos);
+
+                String rutaArchivo = rutaArchivoUsuario + File.separator + nombreArchivo;
+
+                GenericResponse<byte[]> archivoBytes = obtenerArchivo(rutaArchivo);
+                if(archivoBytes.isSuccess()) {
+                    List<ByteArrayResource> listFiles = new ArrayList<>();
+                    List<String> fileNames = new ArrayList<>();
+                    fileNames.add(nombreArchivo);
+                    baos.write(archivoBytes.getData());
+                    ByteArrayResource bar = new ByteArrayResource(baos.toByteArray());
+                    listFiles.add(bar);
+                    GenericResponse<Object> respEnvioEmail = mailService.enviarEmail3(usuario.getEmail(), asunto, "CORREO DE PRUEBA", null, fileNames, listFiles);
+                    if(respEnvioEmail.isSuccess()) {
+                        return new GenericResponse<>(true, "Email enviado!");
+                    }
+                    return respEnvioEmail;
                 }
-                return respEnvioEmail;
+                else {
+                    return new GenericResponse<>(false, "Error al enviar el correo. El usuario no existe.");
+                }
             }
             else {
                 return new GenericResponse<>(false, "Error al enviar el correo. El usuario no existe.");
@@ -211,8 +225,22 @@ public class UsuarioController {
                 fos.close();
             }
         }
+    }
 
-
+    public GenericResponse<byte[]> obtenerArchivo(String rutaArchivo) throws Exception {
+       try {
+           File archivo = new File(rutaArchivo);
+           if(archivo.exists()) {
+               byte[] bytesArchivo = Files.readAllBytes(archivo.toPath());
+               return new GenericResponse<>(bytesArchivo, true, "Archivo cargado correctamente.");
+           }
+           else {
+               return new GenericResponse<>(false, "Error al momento de obtener el archivo.");
+           }
+       } catch (Exception e) {
+           e.printStackTrace();
+           return new GenericResponse<>(false, "Error al momento de obtener el archivo.");
+       }
     }
 
 

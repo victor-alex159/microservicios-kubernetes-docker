@@ -22,6 +22,11 @@ public class AbstractResponse<T> implements Serializable {
         this.data = data;
         this.msg = msg;
     }
+    public AbstractResponse(T data, boolean success, String msg) {
+        this.data = data;
+        this.success = success;
+        this.msg = msg;
+    }
     public AbstractResponse(boolean success, String msg) {
         this.success = success;
         this.msg = msg;

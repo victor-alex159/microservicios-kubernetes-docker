@@ -15,6 +15,9 @@ public class GenericResponse<T> extends AbstractResponse<T> {
     public GenericResponse(T data, String msg) {
         super(data, msg);
     }
+    public GenericResponse(T data, boolean success, String msg) {
+        super(data, success, msg);
+    }
     public GenericResponse(boolean success, String msg) {
         super(success, msg);
     }
